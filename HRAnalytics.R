@@ -1,0 +1,5 @@
+install.packages('gsheet')
+library(gsheet)
+origData <- gsheet2tbl('https://docs.google.com/spreadsheets/d/19-Zv4KiYXw20Dmtj97BfcE6Cri4paA2lnALa6H3w7pc/edit#gid=205206323')
+employee_ID <- c(1:dim(origData)[1])
+HRData<- cbind(employee_ID, origData)
