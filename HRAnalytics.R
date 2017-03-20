@@ -4,3 +4,5 @@ origData <- as.data.frame(gsheet2tbl('https://docs.google.com/spreadsheets/d/19-
 employeeID <- c(1:dim(origData)[1])
 HRData<- as.data.frame(cbind(employeeID, origData))
 colnames(HRData)[1] <- c('employee_ID')
+# LD: change salary from character to ordinal
+HRData$salary <- ordered(HRData$salary, levels=c("low", "medium", "high"))
