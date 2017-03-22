@@ -72,3 +72,16 @@ ggplot(HRData,aes(x = department, y = (..count..), fill = left)) +
 dev.off()
 
 setwd(mainDirectory)
+
+# Boxplot for numeric variables
+numericColumns <- HRData[,sapply(HRData,is.numeric)]
+numCols <- numericColumns[,-1]
+for(name in colnames(numCols)){
+  pdf(paste(name, '_boxplot.pdf'))
+  boxplot(numCols[[name]], main= name, horizontal = TRUE)
+  dev.off()
+  }
+#correlation matrix
+library(corrplot)
+CorMat <- cor(numCols)
+corrplot(CorMat, method = "pie")
