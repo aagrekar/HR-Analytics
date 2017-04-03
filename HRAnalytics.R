@@ -121,13 +121,14 @@ corrplot(CorMat, method = "pie")
 
 ###### XG BOOST ######
 
+# GN: I did a quick sampling just to get the model in place. The data frames can be updated as needed
+# when we sort out how we will be handling training and test data.
 
 install.packages('xgboost')
 install.packages('caret')
 library(xgboost)
 library(caret)
 
-targetVar <- 'left'
 inTrain <- createDataPartition(y = HRData[,targetVar], p = 0.8, list = FALSE)
 AllTrain <- HRData[inTrain,]
 AllTest <- HRData[-inTrain,]
@@ -135,31 +136,22 @@ NumTrain <- numCols[inTrain,]
 NumTest <- numCols[-inTrain,]
 stopifnot(nrow(AllTrain) + nrow(AllTest) == nrow(HRData))
 
-createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
-  if(includeIntercept){
-    modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ ')))
-  } else {
-    modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ '), -1))
-  }
-  return(modelForm)
-}
+# Create a data matrix on all the numeric values
+NumTrainMatrix <- data.matrix(NumTrain)
+NumTrainLabel <- as.numeric(AllTrain$left) - 1
+NumTestMatrix <- data.matrix(NumTest)
+NumTestLabel <- as.numeric(AllTest$left) - 1
 
-xVars <- names(HRData)  
-xVars <- xVars[xVars != targetVar]
-xVars <- xVars[xVars != 'employee_ID']
+# Generates a model using xgboost on the numeric values - gradient boosting doesn't work on categorical variables
+xgmodel <- xgboost(data = NumTrainMatrix, label = NumTrainLabel, max_depth = 3, eta = 1, nthread = 2, nrounds = 3, objective = "binary:logistic")
+pred <- predict(xgmodel, NumTestMatrix)
 
-formula <- createModelFormula(targetVar, xVars)
-model <- glm(formula, data = AllTrain, family = binomial(link='logit'))
+# Evaluate the model
+NumTestEval <- data.frame(pred, NumTestLabel)
+NumTestEval$pred[NumTestEval$pred > cutoff] <- 1
+NumTestEval$pred[NumTestEval$pred <= cutoff] <- 0
+NumTestEval$evaluation <- NumTestEval$pred - NumTestEval$NumTestLabel
 
-matrixTrain <- data.matrix(AllTrain)
-matrixTest <- data.matrix(AllTest)
-matrixTrain[,8] <- matrixTrain[,8] - 1
-
-
-xgboost(data = matrixTrain, label = matrixTrain[,8], max.depth = 2, eta = 1, nthread = 2, nround = 2, objective = "binary:logistic")
-
-
-
-
-
-
+# At depth = 3 and rounds = 3 the accuracy was already 0.9703234 on the test set. 
+accuracy <- nrow(NumTestEval[NumTestEval$evaluation == 0,])/nrow(NumTestEval)
+accuracy
