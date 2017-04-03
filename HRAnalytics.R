@@ -1,5 +1,5 @@
 #install.packages('gsheet')
-install.packages('gsheet')
+#install.packages('gsheet')
 library(gsheet)
 # Get data
 origData <- as.data.frame(gsheet2tbl('https://docs.google.com/spreadsheets/d/19-Zv4KiYXw20Dmtj97BfcE6Cri4paA2lnALa6H3w7pc/edit#gid=205206323'))
@@ -101,8 +101,6 @@ ggplot(HRData,aes(x = department, y = (..count..), fill = left)) +
        ggtitle("Department v. Employee Left Company") + coord_flip()
 dev.off()
 
-setwd(mainDirectory)
-
 # Boxplot for numeric variables
 numericColumns <- HRData[,sapply(HRData,is.numeric)]
 numCols <- numericColumns[,-1]
@@ -110,8 +108,58 @@ for(name in colnames(numCols)){
   pdf(paste(name, '_boxplot.pdf'))
   boxplot(numCols[[name]], main= name, horizontal = TRUE)
   dev.off()
-  }
+}
+
+setwd(mainDirectory)
+
 #correlation matrix
 library(corrplot)
 CorMat <- cor(numCols)
 corrplot(CorMat, method = "pie")
+
+
+
+###### XG BOOST ######
+
+
+install.packages('xgboost')
+install.packages('caret')
+library(xgboost)
+library(caret)
+
+targetVar <- 'left'
+inTrain <- createDataPartition(y = HRData[,targetVar], p = 0.8, list = FALSE)
+AllTrain <- HRData[inTrain,]
+AllTest <- HRData[-inTrain,]
+NumTrain <- numCols[inTrain,]
+NumTest <- numCols[-inTrain,]
+stopifnot(nrow(AllTrain) + nrow(AllTest) == nrow(HRData))
+
+createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
+  if(includeIntercept){
+    modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ ')))
+  } else {
+    modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ '), -1))
+  }
+  return(modelForm)
+}
+
+xVars <- names(HRData)  
+xVars <- xVars[xVars != targetVar]
+xVars <- xVars[xVars != 'employee_ID']
+
+formula <- createModelFormula(targetVar, xVars)
+model <- glm(formula, data = AllTrain, family = binomial(link='logit'))
+
+matrixTrain <- data.matrix(AllTrain)
+matrixTest <- data.matrix(AllTest)
+matrixTrain[,8] <- matrixTrain[,8] - 1
+
+
+xgboost(data = matrixTrain, label = matrixTrain[,8], max.depth = 2, eta = 1, nthread = 2, nround = 2, objective = "binary:logistic")
+
+
+
+
+
+
