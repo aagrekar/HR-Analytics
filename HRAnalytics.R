@@ -124,10 +124,12 @@ corrplot(CorMat, method = "pie")
 # GN: I did a quick sampling just to get the model in place. The data frames can be updated as needed
 # when we sort out how we will be handling training and test data.
 
-install.packages('xgboost')
-install.packages('caret')
+#install.packages('xgboost')
+#install.packages('caret')
 library(xgboost)
 library(caret)
+
+set.seed(5648)
 
 inTrain <- createDataPartition(y = HRData[,targetVar], p = 0.8, list = FALSE)
 AllTrain <- HRData[inTrain,]
@@ -142,16 +144,46 @@ NumTrainLabel <- as.numeric(AllTrain$left) - 1
 NumTestMatrix <- data.matrix(NumTest)
 NumTestLabel <- as.numeric(AllTest$left) - 1
 
-# Generates a model using xgboost on the numeric values - gradient boosting doesn't work on categorical variables
-xgmodel <- xgboost(data = NumTrainMatrix, label = NumTrainLabel, max_depth = 3, eta = 1, nthread = 2, nrounds = 3, objective = "binary:logistic")
-pred <- predict(xgmodel, NumTestMatrix)
+NumTestEval <- data.frame(NumTestLabel)
+NumTestAccuracy <- c(0)
+i = 2
+converged <- FALSE
 
-# Evaluate the model
-NumTestEval <- data.frame(pred, NumTestLabel)
-NumTestEval$pred[NumTestEval$pred > cutoff] <- 1
-NumTestEval$pred[NumTestEval$pred <= cutoff] <- 0
-NumTestEval$evaluation <- NumTestEval$pred - NumTestEval$NumTestLabel
+# This loop will continue generating xgboost models until
+# the accuracy on the test predictions has converged.
 
-# At depth = 3 and rounds = 3 the accuracy was already 0.9703234 on the test set. 
-accuracy <- nrow(NumTestEval[NumTestEval$evaluation == 0,])/nrow(NumTestEval)
-accuracy
+while (converged == FALSE) {
+  # Run model
+  xgtemp <- xgboost(data = NumTrainMatrix, label = NumTrainLabel, 
+                    max_depth = i, eta = 1, nthread = 2, 
+                    nrounds = i, objective = "binary:logistic", verbose = 0)
+  # Generate predictions
+  predtemp <- predict(xgtemp, NumTestMatrix)
+  # Add those predictions to a new column in eval
+  predtitle <- paste('prediction', i,sep="")
+  acctitle <- paste('correct', i, sep="")
+  # Compute the accuracy
+  NumTestEval[,predtitle] <- predtemp
+  NumTestEval[,predtitle][NumTestEval[,predtitle] > cutoff] <- 1
+  NumTestEval[,predtitle][NumTestEval[,predtitle] <= cutoff] <- 0
+  NumTestEval[,acctitle] <- NumTestEval[,predtitle] - NumTestEval$NumTestLabel
+  NumTestAccuracy[i] <- nrow(NumTestEval[NumTestEval[,acctitle] == 0,])/nrow(NumTestEval)
+  # If the accuracy hasn't converged, keep going
+  converged <- NumTestAccuracy[i] == NumTestAccuracy[i-1]
+  i = i+1
+}
+
+setwd(graphDirectory)
+pdf("xg_accuracy_plot.pdf")
+NumTestAccuracy <- data.frame(NumTestAccuracy)
+# Plots the accuracy as iterations of xgboost increases
+ggplot(data = NumTestAccuracy, aes(x = seq_along(NumTestAccuracy), y = NumTestAccuracy)) + 
+       scale_y_continuous("Accuracy", limits = c(0.9, 1)) +
+       labs(x = "No. of Iterations") +
+       ggtitle("Accuracy of XGBoost After n Iterations") +
+       geom_point(size = 2, colour = "darkblue")
+dev.off()
+setwd(mainDirectory)
+
+xgFinalTestAccuracy <- tail(NumTestAccuracy, n = 1)
+print(paste("Accuracy: ",xgFinalTestAccuracy," --  Xgboost converged in ",i," steps.", sep=""))
