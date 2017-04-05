@@ -129,7 +129,7 @@ corrplot(CorMat, method = "pie")
 library(xgboost)
 library(caret)
 
-set.seed(5648)
+set.seed(1234)
 
 inTrain <- createDataPartition(y = HRData[,targetVar], p = 0.8, list = FALSE)
 AllTrain <- HRData[inTrain,]
@@ -144,19 +144,23 @@ NumTrainLabel <- as.numeric(AllTrain$left) - 1
 NumTestMatrix <- data.matrix(NumTest)
 NumTestLabel <- as.numeric(AllTest$left) - 1
 
+# This loop will continue generating xgboost models until
+# the accuracy on the test predictions has converged.
+#
+# The outer loop iterates through maximum depths and the
+# inner loop iterates through rounds. 
+
+# GN: Need to tune max depth
+
 NumTestEval <- data.frame(NumTestLabel)
 NumTestAccuracy <- c(0)
 i = 2
 converged <- FALSE
-
-# This loop will continue generating xgboost models until
-# the accuracy on the test predictions has converged.
-
 while (converged == FALSE) {
   # Run model
   xgtemp <- xgboost(data = NumTrainMatrix, label = NumTrainLabel, 
-                    max_depth = i, eta = 1, nthread = 2, 
-                    nrounds = i, objective = "binary:logistic", verbose = 0)
+                    max_depth = 8, eta = 0.3, nthread = 2, 
+                    nrounds = i, objective = "binary:logistic", verbose = 1)
   # Generate predictions
   predtemp <- predict(xgtemp, NumTestMatrix)
   # Add those predictions to a new column in eval
@@ -173,6 +177,11 @@ while (converged == FALSE) {
   i = i+1
 }
 
+# This matrix shows how long it took to predict certain observations correctly
+NumTestCorrect <- NumTestEval[seq(3,ncol(NumTestEval),2)]
+NumTestCorrect <- NumTestCorrect[NumTestCorrect$correct2 != 0,]
+NumTestCorrect[,"TotalWrong"] <- -1*rowSums(NumTestCorrect)
+
 setwd(graphDirectory)
 pdf("xg_accuracy_plot.pdf")
 NumTestAccuracy <- data.frame(NumTestAccuracy)
@@ -186,4 +195,4 @@ dev.off()
 setwd(mainDirectory)
 
 xgFinalTestAccuracy <- tail(NumTestAccuracy, n = 1)
-print(paste("Accuracy: ",xgFinalTestAccuracy," --  Xgboost converged in ",i," steps.", sep=""))
+print(paste("XGBoost Test Accuracy: ",xgFinalTestAccuracy," --  Xgboost converged in ",i," steps.", sep=""))
