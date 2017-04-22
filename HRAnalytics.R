@@ -100,6 +100,37 @@ ggplot(HRData,aes(x = department, y = (..count..), fill = left)) +
   ggtitle("Department v. Employee Left Company") + coord_flip()
 dev.off()
 
+# Barplot of last evaluation Vs Employee leaving
+pdf("left_evaluation_bar.pdf")
+ggplot(HRData,aes(x = HRData$last_evaluation, y = (..count..), fill = left)) + 
+  geom_bar(stat = "count") + 
+  scale_fill_discrete("Left Company", labels = c("Stayed","Left")) +
+  scale_x_continuous("Last evaluation") +
+  scale_y_continuous("No. of Employees") +
+  ggtitle("Last Evaluation v. Employee Left Company")
+dev.off()
+
+# Barplot of average monthly hours Vs Employee leaving
+pdf("left_avg_monthly_hours_bar.pdf")
+ggplot(HRData,aes(x = HRData$average_montly_hours, y = (..count..), fill = left)) + 
+  geom_bar(stat = "count") + 
+  scale_fill_discrete("Left Company", labels = c("Stayed","Left")) +
+  scale_x_continuous("Average Monthly hours") +
+  scale_y_continuous("No. of Employees") +
+  ggtitle("Last Evaluation v. Employee Left Company")
+dev.off()
+
+# Barplot of number of project Vs Employee leaving
+pdf("left_no.of_project_bar.pdf")
+ggplot(HRData,aes(x = HRData$number_project, y = (..count..), fill = left)) + 
+  geom_bar(position = "dodge",width = .5) + 
+  scale_fill_discrete("Left Company", labels = c("Stayed","Left")) +
+  scale_x_continuous("No. of Project") +
+  scale_y_continuous("No. of Employees") +
+  ggtitle("No. of Project v. Employee Left Company")
+dev.off()
+
+
 # Boxplot for numeric variables
 numericColumns <- HRData[,sapply(HRData,is.numeric)]
 numCols <- numericColumns[,-1]
@@ -113,7 +144,7 @@ setwd(mainDirectory)
 
 #correlation matrix
 library(corrplot)
-CorMat <- cor(numCols)
+CorMat <- cor(HRData)
 corrplot(CorMat, method = "pie")
 
 
