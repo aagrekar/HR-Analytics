@@ -1,4 +1,5 @@
 
+
 #install.packages('xgboost')
 #install.packages('caret')
 #install.packages('gsheet')
@@ -156,9 +157,9 @@ dev.off()
 
 
 # Boxplot for numeric variables
-for(name in colnames(numCols)){
+for(name in colnames(numericColumns)){
   pdf(paste(name, '_boxplot.pdf'))
-  boxplot(numCols[[name]], main= name, horizontal = TRUE)
+  boxplot(numericColumns[[name]], main= name, horizontal = TRUE)
   dev.off()
 }
 
@@ -166,10 +167,12 @@ setwd(mainDirectory)
 
 #correlation matrix
 library(corrplot)
-CorMat <- cor(HRData)
+CorMat <- cor(numericColumns)
 corrplot(CorMat, method = "pie")
 
 # Linear model
+targetVar <- HRData$left
+xVars <- c(numVars[-1],factVars[-2])
 createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
   if(includeIntercept){
     modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ ')))
@@ -178,7 +181,7 @@ createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
   }
   return(modelForm)
 }
-
+modelForm <- createModelFormula(targetVar, xVars)
 logForm <- createModelFormula("left", names(AllTrain), includeIntercept = TRUE)
 logModel <- glm(logForm,family=binomial(link='logit'),data=AllTrain)
 log.preds <- predict(logModel, newdata = AllTest, type='response')
@@ -222,3 +225,16 @@ confusionMatrix(data = default.pred, reference = unlist(AllTrain$left)
                 , dnn = c('Predicted Default', 'Actual Default'))
 
 table(default.pred)
+
+# Random Forest
+library(randomForest)
+AllTrain<- AllTrain[-1] #for random Forest employee ID is not needed
+fitRF<- randomForest(left~.,data=AllTrain,importance=TRUE,ntree=150,na.action=na.roughfix)
+fitRF
+varImpPlot(fitRF)
+plot(fitRF,log="y")
+
+# performance on the Test set
+PredictRF <- predict(fitRF, AllTest, type = "response")
+conf<- table(PredictRF,AllTest$left)
+confusionMatrix(conf)
