@@ -228,8 +228,8 @@ table(default.pred)
 
 # Random Forest
 library(randomForest)
-AllTrain<- AllTrain[-1] #for random Forest employee ID is not needed
-fitRF<- randomForest(left~.,data=AllTrain,importance=TRUE,ntree=150,na.action=na.roughfix)
+#for random Forest employee ID is not needed
+fitRF<- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
 fitRF
 varImpPlot(fitRF)
 plot(fitRF,log="y")
