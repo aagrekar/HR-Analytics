@@ -166,9 +166,16 @@ for(name in colnames(numericColumns)){
 setwd(mainDirectory)
 
 #correlation matrix
+HRDataEDA<- HRData #for EDA purpose to get a better idea
+str(HRDataEDA)
+HRDataEDA$department <- as.numeric(HRDataEDA$department)
+HRDataEDA$salary <- as.numeric(1:3)[match(HRDataEDA$salary, c('low', 'medium', 'high'))]
+HRDataEDA$Work_accident <- as.numeric(HRDataEDA$Work_accident)
+HRDataEDA$promotion_last_5years<-as.numeric(HRDataEDA$promotion_last_5years)
+
 library(corrplot)
-CorMat <- cor(numericColumns)
-corrplot(CorMat, method = "pie")
+CorMat <- cor(HRDataEDA[-8])
+corrplot(CorMat, method = "shade", use = "complete.obs")
 
 # Linear model
 targetVar <- HRData$left
