@@ -207,9 +207,14 @@ createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
 }
 logForm <- createModelFormula("left", names(AllTrain), includeIntercept = TRUE)
 logModel <- glm(logForm,family=binomial(link='logit'),data=AllTrain)
-log.preds <- predict(logModel, newdata = AllTest, type='response')
-log.preds <- ifelse(log.preds >= 0.5, 1, 0)
+log.probs <- predict(logModel, newdata = AllTest, type='response')
+log.preds <- ifelse(log.probs >= 0.5, 1, 0)
 confusionMatrix(data = log.preds, reference = AllTest$left)
+##probability of employee leaving
+head(order(log.probs,decreasing = TRUE))
+AllTest[827,]
+log.probs[827]
+
 
 ###### XG BOOST ######
 
