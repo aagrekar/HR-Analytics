@@ -235,7 +235,7 @@ confusionMatrix(data = xgb.predictions, reference = AllTest$left,
 ## Evaluation of XGBoost
 # Satisfaction level has the highest gain
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
-xgb.plot.importance(importance)
+xgb.plot.importance(initImp)
 
 
 ## Report conditional probabilities!
