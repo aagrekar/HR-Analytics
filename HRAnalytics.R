@@ -257,6 +257,6 @@ plot(fitRF,log="y")
 
 
 # performance on the Test set
-PredictRF <- predict(fitRF, AllTest, type = "response")
+PredictRF <- predict(fitRF, AllTest[-1], type = "response")
 conf<- table(PredictRF,AllTest$left)
 confusionMatrix(conf)
