@@ -1,5 +1,3 @@
-
-
 #install.packages('xgboost')
 #install.packages('caret')
 #install.packages('gsheet')
@@ -236,6 +234,7 @@ confusionMatrix(data = xgb.predictions, reference = AllTest$left,
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
 xgb.plot.importance(importance)
 
+
 ## Report conditional probabilities!
 # SG: Naive Baye's
 NB <- naiveBayes(left~., data = AllTrain)
@@ -251,7 +250,7 @@ table(default.pred)
 
 # Random Forest
 #for random Forest employee ID is not needed
-fitRF<- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
+fitRF <- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
 fitRF
 varImpPlot(fitRF)
 plot(fitRF,log="y")
