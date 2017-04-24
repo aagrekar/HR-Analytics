@@ -161,13 +161,16 @@ ggplot(HRData,aes(x = HRData$number_project, y = (..count..), fill = left)) +
   ggtitle("No. of Project v. Employee Left Company")
 dev.off()
 
+# Barplot of time spend vs Employee leaving                      
+pdf("left_time_spend.pdf")                      
 ggplot(HRData,aes(x = HRData$time_spend_company, y = (..count..), fill = left)) + 
   geom_bar(position = "dodge",width = .5) + 
   scale_fill_discrete("Left Company", labels = c("Stayed","Left")) +
-  scale_x_continuous("Years With Company") +
+  scale_x_continuous("Time spend in Years With Company") +
   scale_y_continuous("No. of Employees") +
   ggtitle("Years Spent With Company v. Employee Left Company")
-
+dev.off()
+                      
 # Conditional probability plots
 
 
