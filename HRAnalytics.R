@@ -190,7 +190,7 @@ CorMat <- cor(HRDataEDA[-8])
 corrplot(CorMat, method = "shade", use = "complete.obs")
 
 # Linear model
-targetVar <- HRData$left
+targetVar <- c("left")
 xVars <- c(numVars[-1],factVars[-2])
 createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
   if(includeIntercept){
@@ -201,16 +201,15 @@ createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
   return(modelForm)
 }
 modelForm <- createModelFormula(targetVar, xVars)
-logForm <- createModelFormula("left", names(AllTrain), includeIntercept = TRUE)
-logModel <- glm(logForm,family=binomial(link='logit'),data=AllTrain)
+#logForm <- createModelFormula("left", names(AllTrain), includeIntercept = TRUE)
+logModel <- glm(modelForm,family=binomial(link='logit'),data=AllTrain)
 log.probs <- predict(logModel, newdata = AllTest, type='response')
 log.preds <- ifelse(log.probs >= 0.5, 1, 0)
 confusionMatrix(data = log.preds, reference = AllTest$left)
                       
 ##SM: probability of employee leaving
-head(order(log.probs,decreasing = TRUE))
-AllTest[827,]
-log.probs[827]
+AllTest[head(order(log.probs,decreasing = TRUE)),]
+log.probs[head(order(log.probs,decreasing = TRUE))]
 ###### XG BOOST ######
 
 # GN: I did a quick sampling just to get the model in place. The data frames can be updated as needed
@@ -237,9 +236,8 @@ initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgIn
 xgb.plot.importance(initImp)
 
 ##SM:probability of employee leaving
-head(order(xgb.probs,decreasing = TRUE))
-AllTest[1428,]
-log.probs[1428]
+AllTest[head(order(xgb.probs,decreasing = TRUE)),]
+log.probs[head(order(xgb.probs,decreasing = TRUE))]
                       
 # SG: Naive Baye's
 library(e1071)
@@ -252,9 +250,8 @@ confusionMatrix(data = default.pred, reference = unlist(AllTest$left)
                 , dnn = c('Predicted Default', 'Actual Default'))
 
 ## SM:probability of employee leaving
-head(order(probs,decreasing = TRUE))
-AllTest[2305,]
-log.probs[2305]
+AllTest[head(order(probs,decreasing = TRUE)),]
+log.probs[head(order(probs,decreasing = TRUE))]
 
 # SM: Random Forest
 library(randomForest)
@@ -272,9 +269,8 @@ confusionMatrix(conf)
 #probability of employee leaving
 Probability <- predict(fitRF, AllTest, type = "prob")
 Probs<-as.data.frame(Probability)
-head(order(Probs$`1`,decreasing = TRUE))
-AllTest[1,]
-log.probs[1]
+AllTest[head(order(Probs$`1`,decreasing = TRUE)),]
+log.probs[head(order(Probs$`1`,decreasing = TRUE))]
                       
 #AA : Neural Networks
 
