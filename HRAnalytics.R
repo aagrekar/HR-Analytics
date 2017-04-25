@@ -227,14 +227,18 @@ log.probs[827]
 xgInit <- xgboost(data = NumTrainMatrix, label = NumTrainLabel,
                   nrounds = 10,
                   object ="binary:logistic")
-xgb.predictions <- predict(xgInit, NumTestMatrix)
-xgb.predictions <- ifelse(xgb.predictions >= 0.5, 1, 0)
+xgb.probs <- predict(xgInit, NumTestMatrix)
+xgb.predictions <- ifelse(xgb.probs >= 0.5, 1, 0)
 confusionMatrix(data = xgb.predictions, reference = AllTest$left,
                 dnn = c('Predicted Default', 'Actual Default'))
 
 # Satisfaction level has the highest gain
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
 xgb.plot.importance(initImp)
+
+##SM:probability of employee leaving
+head(order(xgb.probs,decreasing = TRUE))
+AllTest[1428,]
 
 # SG: Naive Baye's
 library(e1071)
