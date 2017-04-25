@@ -252,7 +252,8 @@ confusionMatrix(data = default.pred, reference = unlist(AllTest$left)
 ## SM:probability of employee leaving
 probs<-as.data.frame(probs)
 AllTest[head(order(probs$`1`,decreasing = TRUE)),]
-
+probs[head(order(probs$`1`,decreasing = TRUE)),2]
+                      
 # SM: Random Forest
 library(randomForest)
 #for random Forest employee ID is not needed
@@ -270,7 +271,7 @@ confusionMatrix(conf)
 Probability <- predict(fitRF, AllTest, type = "prob")
 Probs<-as.data.frame(Probability)
 AllTest[head(order(Probs$`1`,decreasing = TRUE)),]
-log.probs[head(order(Probs$`1`,decreasing = TRUE))]
+probs[head(order(Probs$`1`,decreasing = TRUE)),2]
                       
 #AA : Neural Networks
 
