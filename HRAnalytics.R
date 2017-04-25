@@ -271,7 +271,7 @@ confusionMatrix(conf)
 Probability <- predict(fitRF, AllTest, type = "prob")
 Probs<-as.data.frame(Probability)
 AllTest[head(order(Probs$`1`,decreasing = TRUE)),]
-probs[head(order(Probs$`1`,decreasing = TRUE)),2]
+
                       
 #AA : Neural Networks
 
