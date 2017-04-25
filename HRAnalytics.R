@@ -239,7 +239,8 @@ xgb.plot.importance(initImp)
 ##SM:probability of employee leaving
 head(order(xgb.probs,decreasing = TRUE))
 AllTest[1428,]
-
+log.probs[1428]
+                      
 # SG: Naive Baye's
 library(e1071)
 NB <- naiveBayes(left~., data = AllTrain)
@@ -253,7 +254,7 @@ confusionMatrix(data = default.pred, reference = unlist(AllTest$left)
 ## SM:probability of employee leaving
 head(order(probs,decreasing = TRUE))
 AllTest[2305,]
-
+log.probs[2305]
 
 # SM: Random Forest
 library(randomForest)
