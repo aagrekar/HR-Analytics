@@ -269,6 +269,13 @@ PredictRF <- predict(fitRF, AllTest[-1], type = "response")
 conf<- table(PredictRF,AllTest$left)
 confusionMatrix(conf)
 
+#probability of employee leaving
+Probability <- predict(fitRF, AllTest, type = "prob")
+Probs<-as.data.frame(Probability)
+head(order(Probs$`1`,decreasing = TRUE))
+AllTest[1,]
+log.probs[1]
+                      
 #AA : Neural Networks
 
 mmFormula <- as.formula(~ left + satisfaction_level + last_evaluation + number_project + 
