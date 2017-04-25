@@ -126,7 +126,7 @@ ggplot(HRData,aes(x = department, y = (..count..), fill = left)) +
   ggtitle("Department v. Employee Left Company") + coord_flip()
 dev.off()
 
-# Barplot of last evaluation Vs Employee leaving
+#SM: Barplot of last evaluation Vs Employee leaving
 pdf("left_evaluation_bar.pdf")
 ggplot(HRData,aes(x = HRData$last_evaluation, y = (..count..), fill = left)) + 
   geom_bar(stat = "count") + 
@@ -136,7 +136,7 @@ ggplot(HRData,aes(x = HRData$last_evaluation, y = (..count..), fill = left)) +
   ggtitle("Last Evaluation v. Employee Left Company")
 dev.off()
 
-# Barplot of average monthly hours Vs Employee leaving
+#SM: Barplot of average monthly hours Vs Employee leaving
 pdf("left_avg_monthly_hours_bar.pdf")
 ggplot(HRData,aes(x = HRData$average_montly_hours, y = (..count..), fill = left)) + 
   geom_bar(stat = "count") + 
@@ -146,7 +146,7 @@ ggplot(HRData,aes(x = HRData$average_montly_hours, y = (..count..), fill = left)
   ggtitle("Last Evaluation v. Employee Left Company")
 dev.off()
 
-# Barplot of number of project Vs Employee leaving
+#SM: Barplot of number of project Vs Employee leaving
 pdf("left_no.of_project_bar.pdf")
 ggplot(HRData,aes(x = HRData$number_project, y = (..count..), fill = left)) + 
   geom_bar(position = "dodge",width = .5) + 
@@ -156,7 +156,7 @@ ggplot(HRData,aes(x = HRData$number_project, y = (..count..), fill = left)) +
   ggtitle("No. of Project v. Employee Left Company")
 dev.off()
 
-# Barplot of time spend vs Employee leaving
+#SM: Barplot of time spend vs Employee leaving
 pdf("left_time_spend.pdf")
 ggplot(HRData,aes(x = HRData$time_spend_company, y = (..count..), fill = left)) + 
   geom_bar(position = "dodge",width = .5) + 
@@ -167,7 +167,7 @@ ggplot(HRData,aes(x = HRData$time_spend_company, y = (..count..), fill = left)) 
 dev.off()
 
 
-# Boxplot for numeric variables
+#SM: Boxplot for numeric variables
 for(name in colnames(numericColumns)){
   pdf(paste(name, '_boxplot.pdf'))
   boxplot(numericColumns[[name]], main= name, horizontal = TRUE)
@@ -177,15 +177,13 @@ for(name in colnames(numericColumns)){
 
 setwd(mainDirectory)
 
-#correlation matrix
+#SM: correlation matrix
 HRDataEDA<- HRData #for EDA purpose to get a better idea
 str(HRDataEDA)
 HRDataEDA$department <- as.numeric(HRDataEDA$department)
 HRDataEDA$salary <- as.numeric(1:3)[match(HRDataEDA$salary, c('low', 'medium', 'high'))]
 HRDataEDA$Work_accident <- as.numeric(HRDataEDA$Work_accident)
 HRDataEDA$promotion_last_5years<-as.numeric(HRDataEDA$promotion_last_5years)
-
-
 
 library(corrplot)
 CorMat <- cor(HRDataEDA[-8])
@@ -208,7 +206,8 @@ logModel <- glm(logForm,family=binomial(link='logit'),data=AllTrain)
 log.probs <- predict(logModel, newdata = AllTest, type='response')
 log.preds <- ifelse(log.probs >= 0.5, 1, 0)
 confusionMatrix(data = log.preds, reference = AllTest$left)
-##probability of employee leaving
+                      
+##SM: probability of employee leaving
 head(order(log.probs,decreasing = TRUE))
 AllTest[827,]
 log.probs[827]
@@ -237,22 +236,22 @@ confusionMatrix(data = xgb.predictions, reference = AllTest$left,
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
 xgb.plot.importance(initImp)
 
-
 # SG: Naive Baye's
 library(e1071)
 NB <- naiveBayes(left~., data = AllTrain)
-probs <- predict(NB, newdata = AllTrain, type = 'raw')
+probs <- predict(NB, newdata = AllTest, type = 'raw')
 default.pred <- (probs[,'0'] <= probs[,'1'])*1
 
 ## Measure performance
-confusionMatrix(data = default.pred, reference = unlist(AllTrain$left)
+confusionMatrix(data = default.pred, reference = unlist(AllTest$left)
                 , dnn = c('Predicted Default', 'Actual Default'))
 
-table(default.pred)
+## SM:probability of employee leaving
+head(order(probs,decreasing = TRUE))
+AllTest[2305,]
 
 
-
-# Random Forest
+# SM: Random Forest
 library(randomForest)
 #for random Forest employee ID is not needed
 fitRF<- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
@@ -260,7 +259,7 @@ fitRF
 varImpPlot(fitRF)
 plot(fitRF,log="y")
 
-# performance on the Test set
+# SM: performance on the Test set
 PredictRF <- predict(fitRF, AllTest[-1], type = "response")
 conf<- table(PredictRF,AllTest$left)
 confusionMatrix(conf)
