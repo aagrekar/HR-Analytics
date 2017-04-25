@@ -1,3 +1,4 @@
+
 #install.packages('xgboost')
 #install.packages('caret')
 #install.packages('gsheet')
@@ -7,14 +8,6 @@ library(xgboost)
 library(caret)
 library(ggplot2)
 library(igraph)
-library(randomForest)
-library(e1071)
-library(corrplot)
-library(rpart)
-library(rpart.plot)
-library(RColorBrewer)
-library(rattle)
-
 # Get data
 origData <- as.data.frame(gsheet2tbl('https://docs.google.com/spreadsheets/d/19-Zv4KiYXw20Dmtj97BfcE6Cri4paA2lnALa6H3w7pc/edit#gid=205206323'))
 
@@ -100,6 +93,8 @@ ggplot(HRData, aes(x = left, y = (..count..), fill = promotion_last_5years)) +
   ylab("No. of Employee") + ggtitle("Employee Left Company   v.   Employee Promoted in Last 5 Years") 
 dev.off()
 
+
+
 ### ADD TO EDA SLIDE
 # Scatterplot of Satisfaction v. Left
 pdf("left_satisfaction_scatter.pdf")
@@ -161,17 +156,15 @@ ggplot(HRData,aes(x = HRData$number_project, y = (..count..), fill = left)) +
   ggtitle("No. of Project v. Employee Left Company")
 dev.off()
 
-# Barplot of time spend vs Employee leaving                      
-pdf("left_time_spend.pdf")                      
+# Barplot of time spend vs Employee leaving
+pdf("left_time_spend.pdf")
 ggplot(HRData,aes(x = HRData$time_spend_company, y = (..count..), fill = left)) + 
   geom_bar(position = "dodge",width = .5) + 
   scale_fill_discrete("Left Company", labels = c("Stayed","Left")) +
-  scale_x_continuous("Time spend in Years With Company") +
+  scale_x_continuous("Time spend in the company") +
   scale_y_continuous("No. of Employees") +
-  ggtitle("Years Spent With Company v. Employee Left Company")
+  ggtitle("Time spend v. Employee Left Company")
 dev.off()
-                      
-# Conditional probability plots
 
 
 # Boxplot for numeric variables
@@ -180,6 +173,7 @@ for(name in colnames(numericColumns)){
   boxplot(numericColumns[[name]], main= name, horizontal = TRUE)
   dev.off()
 }
+
 
 setwd(mainDirectory)
 
@@ -191,6 +185,9 @@ HRDataEDA$salary <- as.numeric(1:3)[match(HRDataEDA$salary, c('low', 'medium', '
 HRDataEDA$Work_accident <- as.numeric(HRDataEDA$Work_accident)
 HRDataEDA$promotion_last_5years<-as.numeric(HRDataEDA$promotion_last_5years)
 
+
+
+library(corrplot)
 CorMat <- cor(HRDataEDA[-8])
 corrplot(CorMat, method = "shade", use = "complete.obs")
 
@@ -205,6 +202,7 @@ createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
   }
   return(modelForm)
 }
+modelForm <- createModelFormula(targetVar, xVars)
 logForm <- createModelFormula("left", names(AllTrain), includeIntercept = TRUE)
 logModel <- glm(logForm,family=binomial(link='logit'),data=AllTrain)
 log.probs <- predict(logModel, newdata = AllTest, type='response')
@@ -214,8 +212,6 @@ confusionMatrix(data = log.preds, reference = AllTest$left)
 head(order(log.probs,decreasing = TRUE))
 AllTest[827,]
 log.probs[827]
-
-
 ###### XG BOOST ######
 
 # GN: I did a quick sampling just to get the model in place. The data frames can be updated as needed
@@ -237,18 +233,16 @@ xgb.predictions <- ifelse(xgb.predictions >= 0.5, 1, 0)
 confusionMatrix(data = xgb.predictions, reference = AllTest$left,
                 dnn = c('Predicted Default', 'Actual Default'))
 
-## Evaluation of XGBoost
 # Satisfaction level has the highest gain
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
 xgb.plot.importance(initImp)
 
 
-## Report conditional probabilities!
 # SG: Naive Baye's
+library(e1071)
 NB <- naiveBayes(left~., data = AllTrain)
 probs <- predict(NB, newdata = AllTrain, type = 'raw')
 default.pred <- (probs[,'0'] <= probs[,'1'])*1
-
 
 ## Measure performance
 confusionMatrix(data = default.pred, reference = unlist(AllTrain$left)
@@ -256,13 +250,15 @@ confusionMatrix(data = default.pred, reference = unlist(AllTrain$left)
 
 table(default.pred)
 
+
+
 # Random Forest
+library(randomForest)
 #for random Forest employee ID is not needed
-fitRF <- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
+fitRF<- randomForest(left~.,data=AllTrain[-1],importance=TRUE,ntree=150,na.action=na.roughfix)
 fitRF
 varImpPlot(fitRF)
 plot(fitRF,log="y")
-
 
 # performance on the Test set
 PredictRF <- predict(fitRF, AllTest[-1], type = "response")
