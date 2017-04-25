@@ -229,12 +229,17 @@ print(paste("XGBoost Test Accuracy: ",xgFinalTestAccuracy," --  Xgboost converge
 
 # SG: Naive Baye's
 library(e1071)
-NB <- naiveBayes(left~., data = AllTrain)
-probs <- predict(NB, newdata = AllTrain, type = 'raw')
+NB <- naiveBayes(left~., data = AllTrain[-1])
+
+# the summary tells us that the model provides a-priori probabilities of no-recurrence and recurrence
+# events as well as conditional probability tables across all attributes.
+print(NB)
+summary(NB)
+
+probs <- predict(NB, newdata = AllTest[-1], type = 'raw')
 default.pred <- (probs[,'0'] <= probs[,'1'])*1
 
 ## Measure performance
-confusionMatrix(data = default.pred, reference = unlist(AllTrain$left)
-                , dnn = c('Predicted Default', 'Actual Default'))
+confusionMatrix(data = default.pred, reference = unlist(AllTest[,'left']), dnn = c('Predicted Default', 'Actual Default'))
 
 table(default.pred)
