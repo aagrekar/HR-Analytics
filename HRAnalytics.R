@@ -14,6 +14,7 @@ library(rpart)
 library(rpart.plot)
 library(RColorBrewer)
 library(rattle)
+library(neuralnet)
 
 # Get data
 origData <- as.data.frame(gsheet2tbl('https://docs.google.com/spreadsheets/d/19-Zv4KiYXw20Dmtj97BfcE6Cri4paA2lnALa6H3w7pc/edit#gid=205206323'))
@@ -263,26 +264,39 @@ confusionMatrix(conf)
 
 #AA : Neural Networks
 
-mmFormula <- as.formula(~ left + satisfaction_level + last_evaluation + number_project + 
+mmFormula <- as.formula(~ satisfaction_level + last_evaluation + number_project + 
                           average_montly_hours + time_spend_company + Work_accident + 
                           promotion_last_5years + department + salary)
 nnTrain <- model.matrix(mmFormula , AllTrain)
 nnTest  <- model.matrix(mmFormula, AllTest)
 
+nnTrain <- cbind(nnTrain, AllTrain$left == 1)
+nnTrain <- cbind(nnTrain, AllTrain$left == 0)
+colnames(nnTrain)[20:21] <- c("left", "notleft")
+
 colnames(nnTrain)[2] <- c("left")
 colnames(nnTest)[2]  <- c("left")
 
-nnTagetVar <- colnames(nnTrain)[2]
-nnXVars    <- colnames(nnTrain)[-c(1,2)]
+nnTagetVar <- colnames(nnTrain)[20:21]
+nnXVars    <- colnames(nnTrain)[-c(1,2,20,21)]
 
 nnFormula <- createModelFormula(nnTagetVar, nnXVars)
 
 wts <- matrix(1, 19, 10)
 
-nnModel <- neuralnet(nnFormula, nnTrain, hidden = 10, learningrate = 0.01, err.fct = "sse", act.fct = "logistic", rep = 1,
-                  threshold = 0.5, startweights = wts, stepmax = 1e6)
+nnModel <- neuralnet(left + notleft ~ satisfaction_level + last_evaluation + number_project + average_montly_hours + 
+                       time_spend_company + Work_accident1 + promotion_last_5years1 + 
+                       departmenthr + departmentIT + departmentmanagement + departmentmarketing + 
+                       departmentproduct_mng + departmentRandD + departmentsales + 
+                       departmentsupport + departmenttechnical + salary.L + salary.Q, 
+                     nnTrain, hidden = 10, learningrate = 0.01, err.fct = "sse", act.fct = "logistic", rep = 1,
+                     threshold = 0.5, startweights = wts, stepmax = 1e6)
 
-nnProbs <- compute(nnModel, covariate = nnTest[,3:dim(nnTest)[2]])$net.result
-nnpred <- ifelse(nnProbs > 0.5, 1, 0)
-cm <- confusionMatrix(data = nnpred, reference = AllTest$left, dnn = c('Predicted Default', 'Actual Default'))
+nnProbs <- compute(nnModel, covariate = nnTest[,2:dim(nnTest)[2]])$net.result
 
+idx <- apply(nnProbs, 1, which.max)
+nnPred <- c('1', '0')[idx]
+confusionMatrix(data = nnPred, reference = AllTest$left, dnn = c('Predicted Default', 'Actual Default'))
+
+nnPredOP <- apply(nnProbs,1,mean)
+AllTest[head(order(nnPredOP, decreasing = TRUE)),]
