@@ -264,7 +264,7 @@ fitRF
 varImpPlot(fitRF)
 plot(fitRF,log="y")
 
-# SM: performance on the Test set
+#performance on the Test set
 PredictRF <- predict(fitRF, AllTest[-1], type = "response")
 conf<- table(PredictRF,AllTest$left)
 confusionMatrix(conf)
