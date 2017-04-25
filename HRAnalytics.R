@@ -277,11 +277,12 @@ nnXVars    <- colnames(nnTrain)[-c(1,2)]
 
 nnFormula <- createModelFormula(nnTagetVar, nnXVars)
 
-nnModel <- neuralnet(nnFormula, nnTrain, hidden = 6, learningrate = 0.1, err.fct = "sse", act.fct = "logistic", rep = 1,
-                  threshold = 0.5)
+wts <- matrix(1, 19, 10)
 
-wts <- nnModel$weights[[1]][[1]]
+nnModel <- neuralnet(nnFormula, nnTrain, hidden = 10, learningrate = 0.01, err.fct = "sse", act.fct = "logistic", rep = 1,
+                  threshold = 0.5, startweights = wts, stepmax = 1e6)
 
 nnProbs <- compute(nnModel, covariate = nnTest[,3:dim(nnTest)[2]])$net.result
 nnpred <- ifelse(nnProbs > 0.5, 1, 0)
-confusionMatrix(data = nnpred, reference = AllTest$left, dnn = c('Predicted Default', 'Actual Default'))                
+cm <- confusionMatrix(data = nnpred, reference = AllTest$left, dnn = c('Predicted Default', 'Actual Default'))
+
