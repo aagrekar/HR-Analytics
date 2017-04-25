@@ -264,3 +264,28 @@ plot(fitRF,log="y")
 PredictRF <- predict(fitRF, AllTest[-1], type = "response")
 conf<- table(PredictRF,AllTest$left)
 confusionMatrix(conf)
+
+#AA : Neural Networks
+
+mmFormula <- as.formula(~ left + satisfaction_level + last_evaluation + number_project + 
+                          average_montly_hours + time_spend_company + Work_accident + 
+                          promotion_last_5years + department + salary)
+nnTrain <- model.matrix(mmFormula , AllTrain)
+nnTest  <- model.matrix(mmFormula, AllTest)
+
+colnames(nnTrain)[2] <- c("left")
+colnames(nnTest)[2]  <- c("left")
+
+nnTagetVar <- colnames(nnTrain)[2]
+nnXVars    <- colnames(nnTrain)[-c(1,2)]
+
+nnFormula <- createModelFormula(nnTagetVar, nnXVars)
+
+nnModel <- neuralnet(nnFormula, nnTrain, hidden = 6, learningrate = 0.1, err.fct = "sse", act.fct = "logistic", rep = 1,
+                  threshold = 0.5)
+
+wts <- nnModel$weights[[1]][[1]]
+
+nnProbs <- compute(nnModel, covariate = nnTest[,3:dim(nnTest)[2]])$net.result
+nnpred <- ifelse(nnProbs > 0.5, 1, 0)
+confusionMatrix(data = nnpred, reference = AllTest$left, dnn = c('Predicted Default', 'Actual Default'))                
