@@ -238,10 +238,10 @@ xgb.plot.importance(initImp)
 ##SM:probability of employee leaving
 AllTest[head(order(xgb.probs,decreasing = TRUE)),]
 log.probs[head(order(xgb.probs,decreasing = TRUE))]
-                      
-# SG: Naive Baye's
+
+#SG: Naive Baye's                      
 library(e1071)
-NB <- naiveBayes(left~., data = AllTrain)
+NB <- naiveBayes(modelForm, data = AllTrain)
 probs <- predict(NB, newdata = AllTest, type = 'raw')
 default.pred <- (probs[,'0'] <= probs[,'1'])*1
 
@@ -250,8 +250,8 @@ confusionMatrix(data = default.pred, reference = unlist(AllTest$left)
                 , dnn = c('Predicted Default', 'Actual Default'))
 
 ## SM:probability of employee leaving
-AllTest[head(order(probs,decreasing = TRUE)),]
-log.probs[head(order(probs,decreasing = TRUE))]
+probs<-as.data.frame(probs)
+AllTest[head(order(probs$`1`,decreasing = TRUE)),]
 
 # SM: Random Forest
 library(randomForest)
