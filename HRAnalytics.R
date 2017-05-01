@@ -212,28 +212,55 @@ AllTest[head(order(log.probs,decreasing = TRUE)),]
 log.probs[head(order(log.probs,decreasing = TRUE))]
 ###### XG BOOST ######
 
-# GN: I did a quick sampling just to get the model in place. The data frames can be updated as needed
-# when we sort out how we will be handling training and test data.
-
-# This loop will continue generating xgboost models until
-# the accuracy on the test predictions has converged.
-#
-# The outer loop iterates through maximum depths and the
-# inner loop iterates through rounds. 
-
-# GN: Need to tune max depth
+# GN: This is an initial model with no tuning
 
 xgInit <- xgboost(data = NumTrainMatrix, label = NumTrainLabel,
                   nrounds = 10,
                   object ="binary:logistic")
 xgb.probs <- predict(xgInit, NumTestMatrix)
 xgb.predictions <- ifelse(xgb.probs >= 0.5, 1, 0)
-confusionMatrix(data = xgb.predictions, reference = AllTest$left,
-                dnn = c('Predicted Default', 'Actual Default'))
+xgb.init.confusion <- confusionMatrix(data = xgb.predictions, reference = AllTest$left,
+                                      dnn = c('Predicted Default', 'Actual Default'))
 
 # Satisfaction level has the highest gain
 initImp <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgInit)
 xgb.plot.importance(initImp)
+
+## Tuned version of xgboost
+
+AllTrainCopy <- AllTrain                                                   # A copy with different labels for 'left' to make tuning work
+levels(AllTrainCopy$left) <- make.names(c('Stayed', 'Left'))
+
+xg.ctrl <- trainControl(method = "repeatedcv", repeats = 1, number = 3,    # Training control parameters
+                        #summaryFunction = twoClassSummary,
+                        classProbs = TRUE, 
+                        allowParallel = T)
+
+xgb.grid <- expand.grid(nrounds = 1000,                                    # Grid of values to try
+                        eta = c(0.01,0.05,0.1),
+                        max_depth = c(2,4,6,8,10,14),
+                        gamma = 0, 
+                        colsample_bytree = 1,
+                        min_child_weight = 1,
+                        subsample = 1
+                        )
+xgb.formula <- createModelFormula('left', numVars[-1])
+
+xgb.tune <- train(xgb.formula,    
+                  data = AllTrainCopy,
+                  method = "xgbTree",
+                  trControl=xg.ctrl,
+                  tuneGrid=xgb.grid,
+                  verbose=T,
+                  metric="Kappa",
+                  nthread =3)
+
+xgb.tuned.preds <- predict(xgb.tune, NumTestMatrix)
+xgb.tuned.numpreds <- ifelse(xgb.tuned.probs == 'Stayed', 0, 1)
+
+# The accuracy went up to 0.99!
+xgb.tuned.confusion <- confusionMatrix(data = xgb.tuned.numpreds, reference = AllTest$left,
+                                      dnn = c('Predicted Default', 'Actual Default'))
 
 ##SM:probability of employee leaving
 AllTest[head(order(xgb.probs,decreasing = TRUE)),]
