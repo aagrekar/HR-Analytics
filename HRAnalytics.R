@@ -79,6 +79,10 @@ if (!dir.exists(graphDirectory)) {
   dir.create(graphDirectory)
 } 
 
+summary(HRData)
+out <- capture.output(summary(HRData))
+cat("summary", out, file="summary.txt", sep="n", append=TRUE)
+
 setwd(graphDirectory)
 # Centers plot titles
 theme_update(plot.title = element_text(hjust = 0.5))
@@ -166,6 +170,12 @@ ggplot(HRData,aes(x = HRData$time_spend_company, y = (..count..), fill = left)) 
   ggtitle("Time spend v. Employee Left Company")
 dev.off()
 
+# Segmenting the satisfaciton level data
+highPerfEmployees <- HRData[HRData$left == 1 & HRData$satisfaction_level <= 0.12,]
+percHighPerf <- dim(highPerfEmployees)[1]/dim(HRData[HRData$left == 1,])[1]
+
+lowPerfEmployees <- HRData[HRData$left == 1 & HRData$satisfaction_level <= 0.46 & HRData$satisfaction_level >= .37,]
+percLowPerf <- dim(lowPerfEmployees)[1]/dim(HRData[HRData$left == 1,])[1]
 
 #SM: Boxplot for numeric variables
 for(name in colnames(numericColumns)){
@@ -186,6 +196,7 @@ HRDataEDA$Work_accident <- as.numeric(HRDataEDA$Work_accident)
 HRDataEDA$promotion_last_5years<-as.numeric(HRDataEDA$promotion_last_5years)
 
 library(corrplot)
+png("corr.png")
 CorMat <- cor(HRDataEDA[-8])
 corrplot(CorMat, method = "shade", use = "complete.obs")
 
@@ -239,7 +250,7 @@ xg.ctrl <- trainControl(method = "repeatedcv", repeats = 1, number = 3,    # Tra
 xgb.grid <- expand.grid(nrounds = 1000,                                    # Grid of values to try
                         eta = c(0.01,0.05,0.1),
                         max_depth = c(2,4,6,8,10,14),
-                        gamma = 0, 
+                        gamma = 1, 
                         colsample_bytree = 1,
                         min_child_weight = 1,
                         subsample = 1
