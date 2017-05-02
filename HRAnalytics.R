@@ -243,7 +243,6 @@ AllTrainCopy <- AllTrain                                                   # A c
 levels(AllTrainCopy$left) <- make.names(c('Stayed', 'Left'))
 
 xg.ctrl <- trainControl(method = "repeatedcv", repeats = 1, number = 3,    # Training control parameters
-                        #summaryFunction = twoClassSummary,
                         classProbs = TRUE, 
                         allowParallel = T)
 
@@ -257,6 +256,7 @@ xgb.grid <- expand.grid(nrounds = 1000,                                    # Gri
                         )
 xgb.formula <- createModelFormula('left', numVars[-1])
 
+# This takes a while!
 xgb.tune <- train(xgb.formula,    
                   data = AllTrainCopy,
                   method = "xgbTree",
@@ -267,11 +267,14 @@ xgb.tune <- train(xgb.formula,
                   nthread =3)
 
 xgb.tuned.preds <- predict(xgb.tune, NumTestMatrix)
-xgb.tuned.numpreds <- ifelse(xgb.tuned.probs == 'Stayed', 0, 1)
+xgb.tuned.numpreds <- ifelse(xgb.tuned.preds == 'Stayed', 0, 1)
 
-# The accuracy went up to 0.99!
 xgb.tuned.confusion <- confusionMatrix(data = xgb.tuned.numpreds, reference = AllTest$left,
                                       dnn = c('Predicted Default', 'Actual Default'))
+
+xgb.tuned.importance <- xgb.importance(feature_names = colnames(NumTrainMatrix), model = xgb.tune$finalModel)
+xgb.plot.importance(xgb.tuned.importance)
+
 
 ##SM:probability of employee leaving
 AllTest[head(order(xgb.probs,decreasing = TRUE)),]
